@@ -1,14 +1,9 @@
-export type GenerationMode = 'research' | 'business' | 'python';
-
 export interface ScriptIdea {
   id: string;
   category: string;
   title: string;
   description: string;
-  refinedPrompt?: string;
-  moneyValue?: string;
-  effortValue?: string;
-  monetizationStrategies?: string;
+  refinedPrompt: string;
 }
 
 export interface ApiPayload {

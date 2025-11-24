@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScriptIdea } from '../types';
-import { Terminal, FileCode, ArrowRight, DollarSign, Activity } from 'lucide-react';
+import { Terminal, FileCode, ArrowRight } from 'lucide-react';
 
 interface IdeaCardProps {
   idea: ScriptIdea;
@@ -12,17 +12,11 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
     <div className="group relative bg-surface border border-slate-700 rounded-xl p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 flex flex-col h-full">
       
       {/* Category Badge */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4">
         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-900 text-primary border border-slate-700">
            <Terminal size={12} className="mr-1.5" />
            {idea.category}
         </span>
-        {idea.moneyValue && (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-900/30 text-emerald-400 border border-emerald-500/20">
-             <DollarSign size={10} className="mr-1" />
-             Valuable
-          </span>
-        )}
       </div>
 
       {/* Title */}
@@ -39,14 +33,14 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
       <div className="mt-auto pt-4 border-t border-slate-700/50 flex justify-between items-center">
          <div className="flex items-center text-xs text-slate-500">
             <FileCode size={14} className="mr-1" />
-            Topic Idea
+            Python Script
          </div>
          
          <button 
            onClick={() => onViewDetails(idea)}
            className="flex items-center gap-2 text-sm font-medium text-white hover:text-accent transition-colors"
          >
-           View Details
+           Details & Prompt
            <ArrowRight size={16} />
          </button>
       </div>
