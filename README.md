@@ -1,4 +1,8 @@
-## Quickstart
+GenScript is a web-based application designed to spark creativity for Python developers by generating specialized project ideas tailored to specific domains or topics. Simply enter a topic (e.g., "Finance", "IoT", "Healthcare") and get 50 unique project ideas
+
+## Run Locally
+
+**Prerequisites:**  Node.js
 
 
 1. Install dependencies:
