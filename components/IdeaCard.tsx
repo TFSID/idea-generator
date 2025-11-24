@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScriptIdea } from '../types';
-import { Terminal, FileCode, ArrowRight, DollarSign, Activity } from 'lucide-react';
+import { Terminal, FileCode, ArrowRight, DollarSign, Activity, BookOpen, Briefcase, Code2, Scroll } from 'lucide-react';
 
 interface IdeaCardProps {
   idea: ScriptIdea;
@@ -8,6 +8,30 @@ interface IdeaCardProps {
 }
 
 export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
+
+  // Determine mode from ID (format: idea-mode-timestamp-index)
+  const getModeInfo = () => {
+    const parts = idea.id.split('-');
+    // Fallback if ID format is unexpected
+    const mode = parts.length >= 2 ? parts[1] : 'unknown';
+
+    switch (mode) {
+      case 'research':
+        return { label: 'Research Topic', icon: BookOpen };
+      case 'business':
+        return { label: 'Business Case', icon: Briefcase };
+      case 'python':
+        return { label: 'Python Script', icon: Code2 };
+      default:
+        // Attempt to guess based on fields if ID parsing fails (legacy data support)
+        if (idea.moneyValue || idea.monetizationStrategies) return { label: 'Business Case', icon: Briefcase };
+        if (idea.refinedPrompt?.includes('python')) return { label: 'Python Script', icon: Code2 };
+        return { label: 'Topic Idea', icon: Scroll };
+    }
+  };
+
+  const { label, icon: Icon } = getModeInfo();
+
   return (
     <div className="group relative bg-surface border border-slate-700 rounded-xl p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 flex flex-col h-full">
       
@@ -44,8 +68,8 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
       {/* Action Area */}
       <div className="mt-auto pt-4 border-t border-slate-700/50 flex justify-between items-center">
          <div className="flex items-center text-xs text-slate-500">
-            <FileCode size={14} className="mr-1" />
-            Topic Idea
+            <Icon size={14} className="mr-1" />
+            {label}
          </div>
          
          <button 
