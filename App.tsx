@@ -263,6 +263,10 @@ const App: React.FC = () => {
         isOpen={isSavedModalOpen}
         ideas={savedIdeas}
         onClose={() => setIsSavedModalOpen(false)}
+        onViewDetails={(idea) => {
+          setIsSavedModalOpen(false);
+          setTimeout(() => openModal(idea), 200);
+        }}
       />
 
     </div>

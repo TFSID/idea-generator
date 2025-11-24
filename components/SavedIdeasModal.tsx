@@ -6,9 +6,10 @@ interface SavedIdeasModalProps {
   isOpen: boolean;
   onClose: () => void;
   ideas: ScriptIdea[];
+  onViewDetails?: (idea: ScriptIdea) => void;
 }
 
-export const SavedIdeasModal: React.FC<SavedIdeasModalProps> = ({ isOpen, onClose, ideas }) => {
+export const SavedIdeasModal: React.FC<SavedIdeasModalProps> = ({ isOpen, onClose, ideas, onViewDetails }) => {
   if (!isOpen) return null;
 
   return (
@@ -38,18 +39,24 @@ export const SavedIdeasModal: React.FC<SavedIdeasModalProps> = ({ isOpen, onClos
            ) : (
              <div className="space-y-4">
                {ideas.map((idea, idx) => (
-                 <div key={idx} className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-colors">
+                 <div
+                    key={idx}
+                    className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-primary/40 transition-all cursor-pointer group"
+                    onClick={() => onViewDetails?.(idea)}
+                 >
                     <div className="flex justify-between items-start mb-2">
-                       <span className="text-xs font-bold px-2 py-1 rounded bg-primary/20 text-primary border border-primary/20">
-                         {idea.category}
-                       </span>
-                       <span className="text-xs text-slate-500 flex items-center gap-1">
-                          {/* We don't have exact timestamp in types but backend has it.
-                              For now just showing static icon or nothing.
-                              If we fetch from backend, we might get createdAt. */}
-                       </span>
+                       <div className="flex gap-2">
+                         <span className="text-xs font-bold px-2 py-1 rounded bg-primary/20 text-primary border border-primary/20">
+                           {idea.category}
+                         </span>
+                         {idea.moneyValue && (
+                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center">
+                             $$$
+                           </span>
+                         )}
+                       </div>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">{idea.title}</h3>
+                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors">{idea.title}</h3>
                     <p className="text-slate-400 text-sm line-clamp-2">{idea.description}</p>
                  </div>
                ))}

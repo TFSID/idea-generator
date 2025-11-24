@@ -19,17 +19,20 @@ export const GENERATION_CONFIG: Record<GenerationMode, GenerationConfigItem> = {
 
 Tolong berikan deskripsi detail untuk setiap topik.
 
-PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Markdown, code block, atau pembuka/penutup). Gunakan format ini untuk setiap item:
+Berikan juga "refined prompt/instruction" untuk AI (seperti Claude/Gemini) menggunakan framework R.C.T.F.M (Role, Context, Task, Format, Meta-Cognition).
+
+PENTING: Output HARUS berupa JSON Array yang valid. Jangan sertakan teks penjelasan di luar JSON. Jika model berpikir (thinking process), pastikan output akhirnya adalah JSON berikut:
 
 [
   {
     "category": "Kategori Topik",
     "title": "Judul Topik",
-    "description": "Deskripsi detail"
+    "description": "Deskripsi detail",
+    "refinedPrompt": "Prompt detail R.C.T.F.M untuk penelitian mendalam..."
   },
   ...
 ]`,
-    fields: ['category', 'title', 'description']
+    fields: ['category', 'title', 'description', 'refinedPrompt']
   },
   business: {
     label: 'Research & Business',
@@ -38,17 +41,17 @@ PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Mar
 
 Berikan juga "refined prompt/instruction" untuk AI (seperti Claude/Gemini) menggunakan framework R.C.T.F.M (Role, Context, Task, Format, Meta-Cognition).
 
-PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Markdown, code block, atau pembuka/penutup). Gunakan format ini untuk setiap item:
+PENTING: Output HARUS berupa JSON Array yang valid. Jangan sertakan teks penjelasan di luar JSON. Jika model berpikir (thinking process), pastikan output akhirnya adalah JSON berikut:
 
 [
   {
     "category": "Kategori",
     "title": "Judul Topik",
     "description": "Deskripsi detail",
-    "moneyValue": "Potensi nilai finansial",
-    "effortValue": "Estimasi usaha",
-    "monetizationStrategies": "Strategi monetisasi",
-    "refinedPrompt": "Prompt detail R.C.T.F.M..."
+    "moneyValue": "Potensi nilai finansial (e.g. Tinggi/Sedang/Rendah atau estimasi angka)",
+    "effortValue": "Estimasi usaha (e.g. Tinggi/Sedang/Rendah)",
+    "monetizationStrategies": "Strategi monetisasi yang spesifik",
+    "refinedPrompt": "Prompt detail R.C.T.F.M untuk eksekusi bisnis..."
   },
   ...
 ]`,
@@ -61,7 +64,7 @@ PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Mar
 
 Berikan juga "refined prompt/instruction" untuk AI (seperti Claude/Gemini) menggunakan framework R.C.T.F.M (Role, Context, Task, Format, Meta-Cognition) untuk membuat kode programnya.
 
-PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Markdown, code block, atau pembuka/penutup). Gunakan format ini untuk setiap item:
+PENTING: Output HARUS berupa JSON Array yang valid. Jangan sertakan teks penjelasan di luar JSON. Jika model berpikir (thinking process), pastikan output akhirnya adalah JSON berikut:
 
 [
   {

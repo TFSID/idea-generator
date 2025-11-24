@@ -83,9 +83,16 @@ const parseResponse = (text: string, mode: GenerationMode): ScriptIdea[] => {
   const parsedItems: ScriptIdea[] = [];
 
   try {
-      // Clean up text to ensure it's valid JSON
-      // Sometimes models wrap JSON in ```json ... ```
-      let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      // Find JSON Array in the text (to ignore "Thinking" blocks or other text)
+      // We look for [ ... ] structure.
+      const jsonStart = text.indexOf('[');
+      const jsonEnd = text.lastIndexOf(']');
+
+      let cleanText = text;
+
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          cleanText = text.substring(jsonStart, jsonEnd + 1);
+      }
 
       const jsonItems = JSON.parse(cleanText);
 
