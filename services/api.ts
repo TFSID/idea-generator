@@ -1,9 +1,9 @@
-import { API_ENDPOINT, API_KEY, GENERATION_CONFIG } from '../constants';
+import { API_ENDPOINT, API_KEY, LOCAL_API_ENDPOINT, GENERATION_CONFIG } from '../constants';
 import { ScriptIdea, ApiPayload, ApiResponse, GenerationMode } from '../types';
 
-export const generateIdeas = async (input: string, mode: GenerationMode = 'python'): Promise<ScriptIdea[]> => {
+export const generateIdeas = async (input: string, mode: GenerationMode = 'python', count: number = 10): Promise<ScriptIdea[]> => {
   const config = GENERATION_CONFIG[mode];
-  const fullPrompt = config.promptTemplate(input);
+  const fullPrompt = config.promptTemplate(input, count);
 
   const payload: ApiPayload = {
     prompt: fullPrompt,
@@ -36,7 +36,21 @@ export const generateIdeas = async (input: string, mode: GenerationMode = 'pytho
     if (!text) {
         throw new Error("No output text returned from the model.");
     }
-    return parseResponse(text, mode);
+
+    // Parse the generated ideas
+    const ideas = parseResponse(text, mode);
+
+    // Save ideas to local backend
+    if (ideas.length > 0) {
+        try {
+            await saveIdeasToLocal(ideas);
+        } catch (saveError) {
+            console.error("Failed to save ideas to local database:", saveError);
+            // We don't throw here, as we still want to show the results to the user
+        }
+    }
+
+    return ideas;
 
   } catch (error) {
     console.error("Generation failed:", error);
@@ -44,52 +58,95 @@ export const generateIdeas = async (input: string, mode: GenerationMode = 'pytho
   }
 };
 
+const saveIdeasToLocal = async (ideas: ScriptIdea[]) => {
+    try {
+        const response = await fetch(`${LOCAL_API_ENDPOINT}/validate-and-save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ideas })
+        });
+
+        if (!response.ok) {
+            console.error('Error saving to local DB:', response.statusText);
+        } else {
+            const result = await response.json();
+            console.log('Saved to local DB:', result);
+        }
+    } catch (err) {
+        console.error('Error contacting local DB:', err);
+    }
+};
+
 const parseResponse = (text: string, mode: GenerationMode): ScriptIdea[] => {
+  const parsedItems: ScriptIdea[] = [];
+
+  try {
+      // Clean up text to ensure it's valid JSON
+      // Sometimes models wrap JSON in ```json ... ```
+      let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      const jsonItems = JSON.parse(cleanText);
+
+      if (Array.isArray(jsonItems)) {
+          jsonItems.forEach((item, index) => {
+              const idea: ScriptIdea = {
+                  id: `idea-${mode}-${Date.now()}-${index}`,
+                  category: item.category || 'General',
+                  title: item.title || 'Untitled',
+                  description: item.description || '',
+                  moneyValue: item.moneyValue,
+                  effortValue: item.effortValue,
+                  monetizationStrategies: item.monetizationStrategies,
+                  refinedPrompt: item.refinedPrompt
+              };
+
+              if (idea.title && idea.description) {
+                  parsedItems.push(idea);
+              }
+          });
+      }
+  } catch (e) {
+      console.warn("JSON parsing failed, falling back to legacy parsing.", e);
+      // Fallback to legacy parsing if JSON fails (e.g. model ignored instructions)
+      return parseLegacyResponse(text, mode);
+  }
+
+  return parsedItems;
+};
+
+const parseLegacyResponse = (text: string, mode: GenerationMode): ScriptIdea[] => {
   const config = GENERATION_CONFIG[mode];
   const expectedFields = config.fields;
-
-  // Split by double newlines to separate items
   const rawItems = text.split(/\n\s*\n/);
-  
   const parsedItems: ScriptIdea[] = [];
 
   rawItems.forEach((item, index) => {
     const cleanItem = item.trim();
     if (!cleanItem) return;
-
-    // Robust parsing: Extract content between {{ and }}
     const matches = cleanItem.match(/{{(.*?)}}/gs);
-    
-    // We create a partial idea object
     const idea: any = {
         id: `idea-${mode}-${index}-${Date.now()}`
     };
 
     if (matches && matches.length >= expectedFields.length) {
-        // Map matches to fields defined in config
         expectedFields.forEach((field, i) => {
             if (matches[i]) {
                 idea[field] = matches[i].replace(/{{|}}/g, '').trim();
             }
         });
     } else {
-        // Fallback: Split by lines if braces aren't perfect, though less reliable
-        // We really rely on the model following the prompt instructions here.
-        // For now, if we don't get enough matches, we might skip or try a best guess.
-        // Let's try best guess only if we have at least Title/Category/Desc (3 items)
         const lines = cleanItem.split('\n').filter(l => l.trim().length > 0);
         if (lines.length >= 3) {
-             // Simplistic fallback for unknown structure failure
              idea.category = lines[0]?.replace(/{{|}}/g, '') || 'General';
              idea.title = lines[1]?.replace(/{{|}}/g, '') || 'Untitled';
              idea.description = lines[2]?.replace(/{{|}}/g, '') || '';
-             // Can't reliably guess the others
         } else {
-            return; // Skip malformed item
+            return;
         }
     }
 
-    // Ensure mandatory fields exist
     if (idea.title && idea.description) {
         parsedItems.push(idea as ScriptIdea);
     }

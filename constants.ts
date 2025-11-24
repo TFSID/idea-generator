@@ -1,12 +1,13 @@
-export const API_ENDPOINT = 'https://api-ai.tegarfirman.site/v1/generate';
-export const API_KEY = 'sk-e0dde619-2dd3-4018-aad1-e7f602d58534';
+export const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT || 'https://api-ai.tegarfirman.site/v1/generate';
+export const API_KEY = import.meta.env.VITE_API_KEY || '';
+export const LOCAL_API_ENDPOINT = import.meta.env.VITE_LOCAL_API_ENDPOINT || 'http://localhost:3001/api';
 
 import { GenerationMode } from './types';
 
 interface GenerationConfigItem {
   label: string;
   description: string;
-  promptTemplate: (input: string) => string;
+  promptTemplate: (input: string, count: number) => string;
   fields: (keyof import('./types').ScriptIdea)[];
 }
 
@@ -14,55 +15,63 @@ export const GENERATION_CONFIG: Record<GenerationMode, GenerationConfigItem> = {
   research: {
     label: 'Research Topics',
     description: 'Find in-depth research topics with case studies.',
-    promptTemplate: (input: string) => `Buatkan 50 list topik penelitian dengan studi yang relevan dengan "${input}" yang berfokus pada aspek-aspek praktis dan aplikatif dari topik tersebut, serta menyoroti tren terbaru, inovasi, dan studi kasus yang dapat memberikan wawasan mendalam bagi pembaca yang ingin memahami dan menerapkan konsep-konsep ini dalam konteks nyata.
+    promptTemplate: (input: string, count: number) => `Buatkan ${count} daftar topik penelitian dengan studi kasus yang relevan dengan "${input}". Fokus pada aspek praktis dan aplikatif, soroti tren terbaru, inovasi, dan studi kasus.
 
-tolong berikan deskripsi detail dari setiap topik yang telah disediakan untuk bahan penelitian lebih lanjut
+Tolong berikan deskripsi detail untuk setiap topik.
 
-PENTING: Pastikan output Anda hanya berisi daftar item dengan format berikut tanpa teks pembuka atau penutup lain, pisahkan setiap item dengan baris kosong ganda:
+PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Markdown, code block, atau pembuka/penutup). Gunakan format ini untuk setiap item:
 
-Format (Output):
-{{Category}}
-{{Topic/Title}}
-{{Description}}`,
+[
+  {
+    "category": "Kategori Topik",
+    "title": "Judul Topik",
+    "description": "Deskripsi detail"
+  },
+  ...
+]`,
     fields: ['category', 'title', 'description']
   },
   business: {
     label: 'Research & Business',
     description: 'Topics with business analysis, monetization strategies, and implementation prompts.',
-    promptTemplate: (input: string) => `Buatkan 50 list topik penelitian dengan studi yang relevan dengan "${input}" yang berfokus pada aspek-aspek praktis dan aplikatif dari topik tersebut, serta menyoroti tren terbaru, inovasi, dan studi kasus yang dapat memberikan wawasan mendalam bagi pembaca yang ingin memahami dan menerapkan konsep-konsep ini dalam konteks nyata.
+    promptTemplate: (input: string, count: number) => `Buatkan ${count} daftar topik bisnis dan penelitian dengan studi kasus yang relevan dengan "${input}". Fokus pada aspek praktis, tren terbaru, inovasi, dan potensi bisnis.
 
-tolong berikan deskripsi detail dari setiap topik yang telah disediakan untuk bahan penelitian lebih lanjut
+Berikan juga "refined prompt/instruction" untuk AI (seperti Claude/Gemini) menggunakan framework R.C.T.F.M (Role, Context, Task, Format, Meta-Cognition).
 
-berikan juga refined prompt/instruction (text) untuk disesuaikan berdasarkan sesuai kebutuhan proyek dan organisasi agar dapat dimengerti oleh AI Generative Model (seperti Claude, Gemini) dengan framework  R.C.T.F.M: Role (Peran) (R), Context (Konteks) (C), Task (Tugas) (T), Format (Format) (F), dan Meta-Cognition (Metakognisi/mengubah prompt dari permintaan statis menjadi proses yang dinamis dan sadar diri.) (M).
+PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Markdown, code block, atau pembuka/penutup). Gunakan format ini untuk setiap item:
 
-PENTING: Pastikan output Anda hanya berisi daftar item dengan format berikut tanpa teks pembuka atau penutup lain, pisahkan setiap item dengan baris kosong ganda:
-
-Format (Output):
-{{Category}}
-{{Topic/Title}}
-{{Description}}
-{{Money Value}}
-{{Effort Value}}
-{{Monetization Strategies}}
-{{Refined Prompt/Instruction}}`,
+[
+  {
+    "category": "Kategori",
+    "title": "Judul Topik",
+    "description": "Deskripsi detail",
+    "moneyValue": "Potensi nilai finansial",
+    "effortValue": "Estimasi usaha",
+    "monetizationStrategies": "Strategi monetisasi",
+    "refinedPrompt": "Prompt detail R.C.T.F.M..."
+  },
+  ...
+]`,
     fields: ['category', 'title', 'description', 'moneyValue', 'effortValue', 'monetizationStrategies', 'refinedPrompt']
   },
   python: {
     label: 'Python Scripts',
     description: 'Technical Python script ideas with implementation prompts.',
-    promptTemplate: (input: string) => `Buatkan 50 list topik untuk pembuatan python script dengan studi kasus yang relevan dengan "${input}" yang berfokus pada aspek-aspek praktis dan aplikatif dari topik tersebut, serta menyoroti tren terbaru, inovasi, dan studi kasus yang dapat memberikan wawasan mendalam bagi pembaca yang ingin memahami dan menerapkan konsep-konsep ini dalam konteks nyata.
+    promptTemplate: (input: string, count: number) => `Buatkan ${count} ide skrip Python dengan studi kasus yang relevan dengan "${input}". Fokus pada aspek praktis, skalabilitas, dan implementasi teknis.
 
-tolong berikan deskripsi detail dari setiap topik yang telah disediakan untuk bahan penelitian lebih lanjut
+Berikan juga "refined prompt/instruction" untuk AI (seperti Claude/Gemini) menggunakan framework R.C.T.F.M (Role, Context, Task, Format, Meta-Cognition) untuk membuat kode programnya.
 
-berikan juga refined prompt/instruction (text) untuk detail alur pengimplementasinya, fitur yang dapat ditambahkan, dan parameter serta fungsi dengan skalabilitas tinggi yang dapat disesuaikan berdasarkan sesuai kebutuhan proyek dan organisasi agar dapat dimengerti oleh AI Generative Model (seperti Claude, Gemini) untuk membuat kode programnya dengan framework  R.C.T.F.M: Role (Peran) (R), Context (Konteks) (C), Task (Tugas) (T), Format (Format) (F), dan Meta-Cognition (Metakognisi/mengubah prompt dari permintaan statis menjadi proses yang dinamis dan sadar diri.) (M).
+PENTING: Output HARUS dalam format JSON Array murni tanpa teks lain (seperti Markdown, code block, atau pembuka/penutup). Gunakan format ini untuk setiap item:
 
-PENTING: Pastikan output Anda hanya berisi daftar item dengan format berikut tanpa teks pembuka atau penutup lain, pisahkan setiap item dengan baris kosong ganda:
-
-Format (Output):
-{{Category}}
-{{Topic/Title}}
-{{Description}}
-{{Refined Prompt/Instruction}}`,
+[
+  {
+    "category": "Kategori",
+    "title": "Judul Skrip",
+    "description": "Deskripsi detail dan kegunaan",
+    "refinedPrompt": "Prompt detail R.C.T.F.M untuk coding..."
+  },
+  ...
+]`,
     fields: ['category', 'title', 'description', 'refinedPrompt']
   }
 };

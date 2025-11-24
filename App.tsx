@@ -4,17 +4,23 @@ import { ScriptIdea, GenerationMode } from './types';
 import { GENERATION_CONFIG } from './constants';
 import { IdeaCard } from './components/IdeaCard';
 import { DetailModal } from './components/DetailModal';
-import { Sparkles, Search, Loader2, AlertCircle, Github, Terminal, Briefcase, BookOpen, Code2 } from 'lucide-react';
+import { SavedIdeasModal } from './components/SavedIdeasModal';
+import { Sparkles, Search, Loader2, AlertCircle, Github, Terminal, Briefcase, BookOpen, Code2, Database } from 'lucide-react';
+import { LOCAL_API_ENDPOINT } from './constants';
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<GenerationMode>('python');
+  const [count, setCount] = useState<number>(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ideas, setIdeas] = useState<ScriptIdea[]>([]);
   
   const [selectedIdea, setSelectedIdea] = useState<ScriptIdea | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [savedIdeas, setSavedIdeas] = useState<ScriptIdea[]>([]);
+  const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
 
   const resultSectionRef = useRef<HTMLDivElement>(null);
 
@@ -27,7 +33,7 @@ const App: React.FC = () => {
     setIdeas([]);
 
     try {
-      const generatedIdeas = await generateIdeas(input, mode);
+      const generatedIdeas = await generateIdeas(input, mode, count);
       if (generatedIdeas.length === 0) {
           setError("The model returned a response, but we couldn't parse any structured topics. Please try a different keyword.");
       } else {
@@ -61,6 +67,19 @@ const App: React.FC = () => {
     }
   };
 
+  const fetchSavedIdeas = async () => {
+    try {
+      const res = await fetch(`${LOCAL_API_ENDPOINT}/ideas`);
+      if (res.ok) {
+        const data = await res.json();
+        setSavedIdeas(data.ideas);
+        setIsSavedModalOpen(true);
+      }
+    } catch (e) {
+      console.error("Failed to fetch saved ideas", e);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-slate-200 selection:bg-primary/30 selection:text-white flex flex-col">
       
@@ -75,8 +94,19 @@ const App: React.FC = () => {
               GenScript
             </h1>
           </div>
-          <div className="text-xs font-mono text-slate-500 hidden sm:block">
-             Powered by Gemini Flash
+
+          <div className="flex items-center gap-4">
+             <button
+               onClick={fetchSavedIdeas}
+               className="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium transition-colors"
+             >
+               <Database size={16} />
+               <span className="hidden sm:inline">Saved Ideas</span>
+             </button>
+             <div className="w-px h-4 bg-slate-700 hidden sm:block"></div>
+             <div className="text-xs font-mono text-slate-500 hidden sm:block">
+                Powered by Gemini Flash
+             </div>
           </div>
         </div>
       </header>
@@ -115,9 +145,11 @@ const App: React.FC = () => {
              ))}
            </div>
 
-           <form onSubmit={handleGenerate} className="w-full max-w-2xl relative group">
+           <form onSubmit={handleGenerate} className="w-full max-w-2xl relative group flex flex-col gap-4">
              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-secondary rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-             <div className="relative flex items-center bg-surface rounded-xl p-2 border border-slate-700 shadow-2xl">
+
+             {/* Search Input */}
+             <div className="relative flex items-center bg-surface rounded-xl p-2 border border-slate-700 shadow-2xl z-10">
                 <Search className="ml-4 text-slate-500" size={24} />
                 <input 
                   type="text"
@@ -127,10 +159,27 @@ const App: React.FC = () => {
                   className="flex-grow bg-transparent border-none outline-none text-white placeholder-slate-500 px-4 py-3 text-lg font-medium"
                   disabled={loading}
                 />
-                <button 
+             </div>
+
+             {/* Controls Row */}
+             <div className="flex items-center gap-4 z-10">
+               <div className="flex-grow bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
+                 <span className="text-sm text-slate-400 whitespace-nowrap px-2">Count: {count}</span>
+                 <input
+                   type="range"
+                   min="1"
+                   max="50"
+                   value={count}
+                   onChange={(e) => setCount(Number(e.target.value))}
+                   className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                   disabled={loading}
+                 />
+               </div>
+
+               <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="bg-white text-slate-900 hover:bg-slate-200 disabled:bg-slate-600 disabled:text-slate-400 px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 min-w-[140px] justify-center"
+                  className="bg-white text-slate-900 hover:bg-slate-200 disabled:bg-slate-600 disabled:text-slate-400 px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 min-w-[140px] justify-center shadow-lg"
                 >
                   {loading ? (
                     <>
@@ -145,9 +194,10 @@ const App: React.FC = () => {
                   )}
                 </button>
              </div>
+
              {loading && (
-               <p className="mt-4 text-sm text-slate-400 animate-pulse">
-                 Generating 50 high-quality topics. Please wait...
+               <p className="mt-2 text-sm text-slate-400 animate-pulse text-center z-10">
+                 Generating {count} high-quality topics. Please wait...
                </p>
              )}
            </form>
@@ -207,6 +257,12 @@ const App: React.FC = () => {
         isOpen={isModalOpen} 
         idea={selectedIdea} 
         onClose={closeModal} 
+      />
+
+      <SavedIdeasModal
+        isOpen={isSavedModalOpen}
+        ideas={savedIdeas}
+        onClose={() => setIsSavedModalOpen(false)}
       />
 
     </div>
