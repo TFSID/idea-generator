@@ -1,9 +1,8 @@
-import { API_ENDPOINT, API_KEY, GENERATION_CONFIG } from '../constants';
-import { ScriptIdea, ApiPayload, ApiResponse, GenerationMode } from '../types';
+import { API_ENDPOINT, API_KEY, GENERATION_PROMPT_TEMPLATE } from '../constants';
+import { ScriptIdea, ApiPayload, ApiResponse } from '../types';
 
-export const generateIdeas = async (input: string, mode: GenerationMode = 'python'): Promise<ScriptIdea[]> => {
-  const config = GENERATION_CONFIG[mode];
-  const fullPrompt = config.promptTemplate(input);
+export const generateIdeas = async (input: string): Promise<ScriptIdea[]> => {
+  const fullPrompt = GENERATION_PROMPT_TEMPLATE(input);
 
   const payload: ApiPayload = {
     prompt: fullPrompt,
@@ -11,7 +10,7 @@ export const generateIdeas = async (input: string, mode: GenerationMode = 'pytho
     temperature: 1,
     top_p: 0.95,
     max_output_tokens: 65536,
-    system_instruction: "You are a helpful AI assistant specialized in generating structured ideas. You must adhere strictly to the requested output format.",
+    system_instruction: "You are a helpful AI assistant specialized in generating technical Python project ideas. You must adhere strictly to the requested output format.",
     user_metadata: ""
   };
 
@@ -36,7 +35,7 @@ export const generateIdeas = async (input: string, mode: GenerationMode = 'pytho
     if (!text) {
         throw new Error("No output text returned from the model.");
     }
-    return parseResponse(text, mode);
+    return parseResponse(text);
 
   } catch (error) {
     console.error("Generation failed:", error);
@@ -44,54 +43,73 @@ export const generateIdeas = async (input: string, mode: GenerationMode = 'pytho
   }
 };
 
-const parseResponse = (text: string, mode: GenerationMode): ScriptIdea[] => {
-  const config = GENERATION_CONFIG[mode];
-  const expectedFields = config.fields;
-
-  // Split by double newlines to separate items
+const parseResponse = (text: string): ScriptIdea[] => {
+  // 1. Split by double newlines to separate items
+  // The model might use slightly different spacing, so we regex for 2 or more newlines
   const rawItems = text.split(/\n\s*\n/);
   
   const parsedItems: ScriptIdea[] = [];
 
   rawItems.forEach((item, index) => {
+    // Clean up the item string
     const cleanItem = item.trim();
     if (!cleanItem) return;
 
+    // We expect 4 parts. 
+    // Let's split by newline.
+    const lines = cleanItem.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    // Sometimes description or prompt spans multiple lines. 
+    // The user format uses {{ }} wrappers strictly? 
+    // Let's assume the format is adhered to:
+    // {{Category}}
+    // {{Title}}
+    // {{Desc}}
+    // {{Prompt}}
+    
     // Robust parsing: Extract content between {{ and }}
+    // Or just take lines if braces aren't there (fallback)
+    
+    let category = '';
+    let title = '';
+    let description = '';
+    let refinedPrompt = '';
+
+    // Regex approach is safer given multiline possibilities in description/prompt
+    // But typically the simple format requests put them in blocks.
+    
+    // Let's try to identify blocks by the {{ }} markers if present
     const matches = cleanItem.match(/{{(.*?)}}/gs);
     
-    // We create a partial idea object
-    const idea: any = {
-        id: `idea-${mode}-${index}-${Date.now()}`
-    };
-
-    if (matches && matches.length >= expectedFields.length) {
-        // Map matches to fields defined in config
-        expectedFields.forEach((field, i) => {
-            if (matches[i]) {
-                idea[field] = matches[i].replace(/{{|}}/g, '').trim();
-            }
-        });
+    if (matches && matches.length >= 4) {
+        // Remove the braces and trim
+        category = matches[0].replace(/{{|}}/g, '').trim();
+        title = matches[1].replace(/{{|}}/g, '').trim();
+        description = matches[2].replace(/{{|}}/g, '').trim();
+        // Refined prompt is the rest, potentially.
+        // The 4th match is likely the prompt.
+        refinedPrompt = matches[3].replace(/{{|}}/g, '').trim();
     } else {
-        // Fallback: Split by lines if braces aren't perfect, though less reliable
-        // We really rely on the model following the prompt instructions here.
-        // For now, if we don't get enough matches, we might skip or try a best guess.
-        // Let's try best guess only if we have at least Title/Category/Desc (3 items)
-        const lines = cleanItem.split('\n').filter(l => l.trim().length > 0);
-        if (lines.length >= 3) {
-             // Simplistic fallback for unknown structure failure
-             idea.category = lines[0]?.replace(/{{|}}/g, '') || 'General';
-             idea.title = lines[1]?.replace(/{{|}}/g, '') || 'Untitled';
-             idea.description = lines[2]?.replace(/{{|}}/g, '') || '';
-             // Can't reliably guess the others
-        } else {
-            return; // Skip malformed item
+        // Fallback: Line based.
+        // Assuming the first line is category, second is title.
+        // It's risky to assume line counts for desc/prompt without markers.
+        // Given the strict prompt, we hope for markers.
+        if (lines.length >= 4) {
+             category = lines[0].replace(/^{{|}}$/g, '');
+             title = lines[1].replace(/^{{|}}$/g, '');
+             description = lines[2].replace(/^{{|}}$/g, '');
+             refinedPrompt = lines.slice(3).join('\n').replace(/^{{|}}$/g, '');
         }
     }
 
-    // Ensure mandatory fields exist
-    if (idea.title && idea.description) {
-        parsedItems.push(idea as ScriptIdea);
+    if (title && description) {
+        parsedItems.push({
+            id: `idea-${index}-${Date.now()}`,
+            category,
+            title,
+            description,
+            refinedPrompt
+        });
     }
   });
 
