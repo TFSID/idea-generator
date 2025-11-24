@@ -20,7 +20,13 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
         {idea.moneyValue && (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-900/30 text-emerald-400 border border-emerald-500/20">
              <DollarSign size={10} className="mr-1" />
-             Valuable
+             {idea.moneyValue}
+          </span>
+        )}
+        {idea.effortValue && (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-orange-900/30 text-orange-400 border border-orange-500/20">
+             <Activity size={10} className="mr-1" />
+             {idea.effortValue}
           </span>
         )}
       </div>
