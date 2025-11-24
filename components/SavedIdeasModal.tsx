@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScriptIdea } from '../types';
-import { X, Calendar } from 'lucide-react';
+import { X, DollarSign, Activity, Terminal, BookOpen, Briefcase, Code2, Scroll } from 'lucide-react';
 
 interface SavedIdeasModalProps {
   isOpen: boolean;
@@ -11,6 +11,18 @@ interface SavedIdeasModalProps {
 
 export const SavedIdeasModal: React.FC<SavedIdeasModalProps> = ({ isOpen, onClose, ideas, onViewDetails }) => {
   if (!isOpen) return null;
+
+  // Helper to determine mode icon (copied logic for consistency)
+  const getModeIcon = (id: string) => {
+    const parts = id.split('-');
+    const mode = parts.length >= 2 ? parts[1] : 'unknown';
+    switch (mode) {
+      case 'research': return BookOpen;
+      case 'business': return Briefcase;
+      case 'python': return Code2;
+      default: return Scroll;
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -38,28 +50,55 @@ export const SavedIdeasModal: React.FC<SavedIdeasModalProps> = ({ isOpen, onClos
              </div>
            ) : (
              <div className="space-y-4">
-               {ideas.map((idea, idx) => (
-                 <div
-                    key={idx}
-                    className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-primary/40 transition-all cursor-pointer group"
-                    onClick={() => onViewDetails?.(idea)}
-                 >
-                    <div className="flex justify-between items-start mb-2">
-                       <div className="flex gap-2">
-                         <span className="text-xs font-bold px-2 py-1 rounded bg-primary/20 text-primary border border-primary/20">
-                           {idea.category}
-                         </span>
-                         {idea.moneyValue && (
-                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center">
-                             $$$
+               {ideas.map((idea, idx) => {
+                 const ModeIcon = getModeIcon(idea.id);
+
+                 return (
+                   <div
+                      key={idx}
+                      className="bg-slate-800/50 border border-slate-700 rounded-xl p-5 hover:border-primary/40 hover:bg-slate-800 transition-all cursor-pointer group shadow-sm"
+                      onClick={() => onViewDetails?.(idea)}
+                   >
+                      <div className="flex flex-col gap-3">
+                         {/* Badges Row */}
+                         <div className="flex flex-wrap items-center gap-2">
+
+                           {/* Category Badge */}
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/20">
+                             <ModeIcon size={12} className="mr-1.5 opacity-70" />
+                             {idea.category}
                            </span>
-                         )}
-                       </div>
-                    </div>
-                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors">{idea.title}</h3>
-                    <p className="text-slate-400 text-sm line-clamp-2">{idea.description}</p>
-                 </div>
-               ))}
+
+                           {/* Money Value Badge */}
+                           {idea.moneyValue && (
+                             <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                               <DollarSign size={10} className="mr-1" />
+                               {idea.moneyValue}
+                             </span>
+                           )}
+
+                           {/* Effort Value Badge */}
+                           {idea.effortValue && (
+                             <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                               <Activity size={10} className="mr-1" />
+                               {idea.effortValue}
+                             </span>
+                           )}
+                         </div>
+
+                         {/* Title & Desc */}
+                         <div>
+                           <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors leading-tight">
+                             {idea.title}
+                           </h3>
+                           <p className="text-slate-400 text-sm line-clamp-2 leading-relaxed">
+                             {idea.description}
+                           </p>
+                         </div>
+                      </div>
+                   </div>
+                 );
+               })}
              </div>
            )}
         </div>

@@ -28,11 +28,12 @@ PENTING: Output HARUS berupa JSON Array yang valid. Jangan sertakan teks penjela
     "category": "Kategori Topik",
     "title": "Judul Topik",
     "description": "Deskripsi detail",
+    "effortValue": "Estimasi kompleksitas penelitian (e.g. Tinggi/Sedang/Rendah)",
     "refinedPrompt": "Prompt detail R.C.T.F.M untuk penelitian mendalam..."
   },
   ...
 ]`,
-    fields: ['category', 'title', 'description', 'refinedPrompt']
+    fields: ['category', 'title', 'description', 'effortValue', 'refinedPrompt']
   },
   business: {
     label: 'Research & Business',
@@ -71,10 +72,12 @@ PENTING: Output HARUS berupa JSON Array yang valid. Jangan sertakan teks penjela
     "category": "Kategori",
     "title": "Judul Skrip",
     "description": "Deskripsi detail dan kegunaan",
+    "moneyValue": "Potensi komersial/freelance (e.g. $$$ atau deskripsi singkat)",
+    "effortValue": "Estimasi kompleksitas coding (e.g. Tinggi/Sedang/Rendah)",
     "refinedPrompt": "Prompt detail R.C.T.F.M untuk coding..."
   },
   ...
 ]`,
-    fields: ['category', 'title', 'description', 'refinedPrompt']
+    fields: ['category', 'title', 'description', 'moneyValue', 'effortValue', 'refinedPrompt']
   }
 };
