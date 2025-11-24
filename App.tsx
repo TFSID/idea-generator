@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { generateIdeas } from './services/api';
-import { ScriptIdea } from './types';
+import { ScriptIdea, GenerationMode } from './types';
+import { GENERATION_CONFIG } from './constants';
 import { IdeaCard } from './components/IdeaCard';
 import { DetailModal } from './components/DetailModal';
-import { Sparkles, Search, Loader2, AlertCircle, Github, Terminal } from 'lucide-react';
+import { Sparkles, Search, Loader2, AlertCircle, Github, Terminal, Briefcase, BookOpen, Code2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
+  const [mode, setMode] = useState<GenerationMode>('python');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ideas, setIdeas] = useState<ScriptIdea[]>([]);
@@ -25,7 +27,7 @@ const App: React.FC = () => {
     setIdeas([]);
 
     try {
-      const generatedIdeas = await generateIdeas(input);
+      const generatedIdeas = await generateIdeas(input, mode);
       if (generatedIdeas.length === 0) {
           setError("The model returned a response, but we couldn't parse any structured topics. Please try a different keyword.");
       } else {
@@ -48,8 +50,15 @@ const App: React.FC = () => {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    // Small delay to clear state after animation if we had one, but React state update is fine
     setTimeout(() => setSelectedIdea(null), 200);
+  };
+
+  const getModeIcon = (m: GenerationMode) => {
+    switch (m) {
+      case 'research': return <BookOpen size={18} />;
+      case 'business': return <Briefcase size={18} />;
+      case 'python': return <Code2 size={18} />;
+    }
   };
 
   return (
@@ -75,17 +84,36 @@ const App: React.FC = () => {
       <main className="flex-grow flex flex-col">
         
         {/* Hero / Search Section */}
-        <section className="relative pt-16 pb-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center">
+        <section className="relative pt-10 pb-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center">
            {/* Background decorative blobs */}
            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10" />
            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -z-10" />
 
            <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6 max-w-3xl">
-             Generate <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Python Project Ideas</span> with Case Studies
+             Generate <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Tailored Project Ideas</span>
            </h2>
-           <p className="text-lg text-slate-400 max-w-2xl mb-10">
-             Enter a domain or topic (e.g., "Finance", "IoT", "Healthcare") and get 50 specialized project topics complete with R.C.T.F.M structured prompts for AI coding assistants.
+           
+           <p className="text-lg text-slate-400 max-w-2xl mb-8">
+             {GENERATION_CONFIG[mode].description}
            </p>
+
+           {/* Mode Selector */}
+           <div className="flex flex-wrap justify-center gap-2 mb-8 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
+             {(Object.keys(GENERATION_CONFIG) as GenerationMode[]).map((key) => (
+               <button
+                 key={key}
+                 onClick={() => setMode(key)}
+                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                   mode === key 
+                     ? 'bg-primary text-white shadow-lg shadow-primary/25' 
+                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                 }`}
+               >
+                 {getModeIcon(key)}
+                 {GENERATION_CONFIG[key].label}
+               </button>
+             ))}
+           </div>
 
            <form onSubmit={handleGenerate} className="w-full max-w-2xl relative group">
              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-secondary rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
@@ -95,7 +123,7 @@ const App: React.FC = () => {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="What do you want to build? (e.g., 'Stock Analysis', 'Web Scraper')"
+                  placeholder={`Topic for ${GENERATION_CONFIG[mode].label}...`}
                   className="flex-grow bg-transparent border-none outline-none text-white placeholder-slate-500 px-4 py-3 text-lg font-medium"
                   disabled={loading}
                 />
@@ -107,7 +135,7 @@ const App: React.FC = () => {
                   {loading ? (
                     <>
                       <Loader2 className="animate-spin" size={20} />
-                      Creating...
+                      Thinking...
                     </>
                   ) : (
                     <>
@@ -119,7 +147,7 @@ const App: React.FC = () => {
              </div>
              {loading && (
                <p className="mt-4 text-sm text-slate-400 animate-pulse">
-                 Generating 50 detailed topics. This may take up to 30 seconds...
+                 Generating 50 high-quality topics. Please wait...
                </p>
              )}
            </form>
@@ -141,7 +169,7 @@ const App: React.FC = () => {
                    <div className="flex items-center justify-between mb-8">
                      <h3 className="text-2xl font-bold text-white">Generated Topics</h3>
                      <span className="px-3 py-1 bg-slate-800 rounded-full text-sm text-slate-400 border border-slate-700">
-                       {ideas.length} Results Found
+                       {ideas.length} Results
                      </span>
                    </div>
                    
@@ -162,7 +190,7 @@ const App: React.FC = () => {
                    <div className="inline-block p-6 rounded-full bg-slate-800/50 mb-4">
                       <Terminal size={48} className="text-slate-700" />
                    </div>
-                   <p className="text-lg">Ready to generate ideas.</p>
+                   <p className="text-lg">Select a mode and start generating ideas.</p>
                 </div>
               )}
            </div>
@@ -171,7 +199,7 @@ const App: React.FC = () => {
 
       <footer className="bg-slate-950 py-8 border-t border-slate-900">
          <div className="max-w-7xl mx-auto px-4 text-center text-slate-600 text-sm">
-            <p>&copy; {new Date().getFullYear()} GenScript. Designed for Developers.</p>
+            <p>&copy; {new Date().getFullYear()} GenScript. Designed for Developers & Researchers.</p>
          </div>
       </footer>
 
