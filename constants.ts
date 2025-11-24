@@ -1,6 +1,18 @@
+// Ensure VITE_LOCAL_API_ENDPOINT is treated relative to the app root (which might include base url)
+// If VITE_LOCAL_API_ENDPOINT is just '/api', and we are on /subpath/, fetch('/api') goes to root domain /api.
+// If we want it relative to current base, we should use 'api' (no slash) or handle base prepending.
+// However, usually the proxy (in dev) and the server (in prod) are on the same origin root.
+// The simplest robust way for a monolith: use 'api' (relative) so it appends to <base>/api, OR keep /api if the server routes strictly at root /api.
+// Given the monolithic setup serving static files at *, and API at /api, /api is absolute on the domain.
+// If VITE_BASE_URL is /app/, then index.html is at /app/. Fetching /api goes to domain.com/api.
+// If Express serves /api, that's fine.
+// If Express serves /app/api, then we need modification.
+// For now, we assume the Monolith API is always at root /api.
+// If VITE_LOCAL_API_ENDPOINT is configurable, the user can set it to /app/api if needed.
+
 export const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT || 'https://api-ai.tegarfirman.site/v1/generate';
 export const API_KEY = import.meta.env.VITE_API_KEY || '';
-export const LOCAL_API_ENDPOINT = import.meta.env.VITE_LOCAL_API_ENDPOINT || 'http://localhost:3001/api';
+export const LOCAL_API_ENDPOINT = import.meta.env.VITE_LOCAL_API_ENDPOINT || '/api';
 
 import { GenerationMode } from './types';
 

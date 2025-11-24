@@ -3,10 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_KEY: ${VITE_API_KEY}
+        VITE_API_ENDPOINT: ${VITE_API_ENDPOINT}
+        VITE_LOCAL_API_ENDPOINT: ${VITE_LOCAL_API_ENDPOINT}
+        VITE_BASE_URL: ${VITE_BASE_URL}
     container_name: idea-generator
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-3001}:3001"
+      - "${APP_PORT:-3002}:3001"
     environment:
       - PORT=3001
     networks:
@@ -26,14 +31,6 @@ services:
     volumes:
       - ./cloudflared:/etc/cloudflared
     healthcheck:
-      # Changed to port 3001 as that is what the app listens on internally
-      # Using localhost since we are checking FROM the cloudflared container?
-      # No, healthcheck runs INSIDE the container defined (cloudflared).
-      # But cloudflared doesn't expose port 3000/3001.
-      # The original healthcheck: `wget http://app:3000/healthz` implies it checks the 'app' service.
-      # Docker healthcheck runs inside the container it's defined on.
-      # If we want to check connectivity to 'app', we can use the 'app' hostname.
-      # App runs on 3001 internally.
       test: ['CMD-SHELL', 'wget --quiet --tries=1 --spider http://app:3001/ || exit 1']
       interval: 30s
       timeout: 10s

@@ -80,18 +80,25 @@ Access the app at `http://localhost:3001`.
 
 This project includes a `docker-compose.yml` configured for production, optionally with Cloudflare Tunnel.
 
-1. Ensure `.env` is configured with `APP_PORT` and `CLOUDFLARE_TUNNEL_TOKEN`.
+1. Ensure `.env` is configured with the required variables (see below).
 2. Run:
    ```bash
    docker compose up -d --build
    ```
 
-The application will be accessible on `http://localhost:3002` (or your configured `APP_PORT`).
+The application will be accessible on the configured `APP_PORT` (default 3002).
 
 ### Using Dockerfile Directly
 
+When building the image directly, pass build arguments for the frontend:
+
 ```bash
-docker build -t genscript .
+docker build \
+  --build-arg VITE_API_KEY=your_key \
+  --build-arg VITE_API_ENDPOINT=your_endpoint \
+  --build-arg VITE_BASE_URL=/ \
+  -t genscript .
+
 docker run -p 3001:3001 --env-file .env genscript
 ```
 
@@ -103,6 +110,7 @@ docker run -p 3001:3001 --env-file .env genscript
 | :--- | :--- | :--- |
 | `VITE_API_KEY` | API Key for the external AI service. | `sk-...` |
 | `VITE_API_ENDPOINT` | URL for the AI Generation API. | `https://api-ai.tegarfirman.site...` |
+| `VITE_BASE_URL` | Base path for the application (e.g. `/app/` or `/`). | `/` |
 | `VITE_LOCAL_API_ENDPOINT` | Path to the local backend API. Use `/api` for monolithic/docker setups. | `/api` |
 | `APP_PORT` | **(Docker)** Host port to expose. | `3002` |
 | `CLOUDFLARE_TUNNEL_TOKEN`| **(Docker)** Token for cloudflared tunnel. | `ey...` |

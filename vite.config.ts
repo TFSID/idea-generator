@@ -4,9 +4,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+
+    // Get base URL from environment or default to '/'
+    const baseUrl = env.VITE_BASE_URL || '/';
+
     return {
-      // Use relative base path for GitHub Pages compatibility
-      base: './',
+      base: baseUrl,
       server: {
         port: 3000,
         host: '0.0.0.0',
@@ -20,8 +23,10 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        // Ensure env variables are exposed if needed
+        'process.env.VITE_API_KEY': JSON.stringify(env.VITE_API_KEY),
+        'process.env.VITE_API_ENDPOINT': JSON.stringify(env.VITE_API_ENDPOINT),
+        'process.env.VITE_LOCAL_API_ENDPOINT': JSON.stringify(env.VITE_LOCAL_API_ENDPOINT),
       },
       resolve: {
         alias: {
