@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_KEY: ${VITE_API_KEY}
+        VITE_API_ENDPOINT: ${VITE_API_ENDPOINT}
+        VITE_LOCAL_API_ENDPOINT: ${VITE_API_ENDPOINT}
+        VITE_BASE_URL: ${VITE_BASE_URL}
+    container_name: idea-generator
+    restart: unless-stopped
+    ports:
+      - "3003:3001"
+    environment:
+      - PORT=3001
+    networks:
+      - idea-generator-net
+
+networks:
+  idea-generator-net:
+    driver: bridge
