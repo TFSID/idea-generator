@@ -1,6 +1,6 @@
 import { API_ENDPOINT, API_KEY, LOCAL_API_ENDPOINT, GENERATION_CONFIG } from '../constants';
 import { ScriptIdea, ApiPayload, ApiResponse, GenerationMode } from '../types';
-
+// update
 export const generateIdeas = async (input: string, mode: GenerationMode = 'python', count: number = 10): Promise<ScriptIdea[]> => {
   const config = GENERATION_CONFIG[mode];
   const fullPrompt = config.promptTemplate(input, count);

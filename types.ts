@@ -5,7 +5,7 @@ export interface ScriptIdea {
   description: string;
   refinedPrompt: string;
 }
-
+// update
 export interface ApiPayload {
   prompt: string;
   model_name: string;

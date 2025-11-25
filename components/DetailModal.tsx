@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScriptIdea } from '../types';
 import { X, Copy, Check, Cpu, BookOpen } from 'lucide-react';
-
+// update
 interface DetailModalProps {
   idea: ScriptIdea | null;
   isOpen: boolean;

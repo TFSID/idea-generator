@@ -6,7 +6,7 @@ import { DetailModal } from './components/DetailModal';
 import { SavedIdeasModal } from './components/SavedIdeasModal';
 import { Sparkles, Search, Loader2, AlertCircle, Github, Terminal, Briefcase, BookOpen, Code2, Database } from 'lucide-react';
 import { LOCAL_API_ENDPOINT } from './constants';
-
+// update
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<GenerationMode>('python');

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScriptIdea } from '../types';
 import { Terminal, FileCode, ArrowRight, DollarSign, Activity, BookOpen, Briefcase, Code2, Scroll } from 'lucide-react';
-
+// update
 interface IdeaCardProps {
   idea: ScriptIdea;
   onViewDetails: (idea: ScriptIdea) => void;
