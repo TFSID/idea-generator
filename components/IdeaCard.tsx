@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScriptIdea } from '../types';
 import { Terminal, FileCode, ArrowRight, DollarSign, Activity, BookOpen, Briefcase, Code2, Scroll } from 'lucide-react';
-
+// update
 interface IdeaCardProps {
   idea: ScriptIdea;
   onViewDetails: (idea: ScriptIdea) => void;
@@ -36,7 +36,7 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
     <div className="group relative bg-surface border border-slate-700 rounded-xl p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 flex flex-col h-full">
       
       {/* Category Badge */}
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-900 text-primary border border-slate-700">
            <Terminal size={12} className="mr-1.5" />
            {idea.category}
@@ -76,7 +76,7 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
            onClick={() => onViewDetails(idea)}
            className="flex items-center gap-2 text-sm font-medium text-white hover:text-accent transition-colors"
          >
-           Details & Prompt
+           View Details
            <ArrowRight size={16} />
          </button>
       </div>
@@ -86,4 +86,3 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onViewDetails }) => {
     </div>
   );
 };
-

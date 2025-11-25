@@ -1,6 +1,6 @@
 import { API_ENDPOINT, API_KEY, LOCAL_API_ENDPOINT, GENERATION_CONFIG } from '../constants';
 import { ScriptIdea, ApiPayload, ApiResponse, GenerationMode } from '../types';
-
+// update
 export const generateIdeas = async (input: string, mode: GenerationMode = 'python', count: number = 10): Promise<ScriptIdea[]> => {
   const config = GENERATION_CONFIG[mode];
   const fullPrompt = config.promptTemplate(input, count);
@@ -11,7 +11,7 @@ export const generateIdeas = async (input: string, mode: GenerationMode = 'pytho
     temperature: 1,
     top_p: 0.95,
     max_output_tokens: 65536,
-    system_instruction: "You are a helpful AI assistant specialized in generating technical Python project ideas. You must adhere strictly to the requested output format.",
+    system_instruction: "You are a helpful AI assistant specialized in generating structured ideas. You must adhere strictly to the requested output format.",
     user_metadata: ""
   };
 
@@ -130,7 +130,6 @@ const parseLegacyResponse = (text: string, mode: GenerationMode): ScriptIdea[] =
   const parsedItems: ScriptIdea[] = [];
 
   rawItems.forEach((item, index) => {
-    // Clean up the item string
     const cleanItem = item.trim();
     if (!cleanItem) return;
     const matches = cleanItem.match(/{{(.*?)}}/gs);
