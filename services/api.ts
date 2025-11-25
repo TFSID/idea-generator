@@ -1,8 +1,9 @@
-import { API_ENDPOINT, API_KEY, GENERATION_PROMPT_TEMPLATE } from '../constants';
-import { ScriptIdea, ApiPayload, ApiResponse } from '../types';
+import { API_ENDPOINT, API_KEY, LOCAL_API_ENDPOINT, GENERATION_CONFIG } from '../constants';
+import { ScriptIdea, ApiPayload, ApiResponse, GenerationMode } from '../types';
 
-export const generateIdeas = async (input: string): Promise<ScriptIdea[]> => {
-  const fullPrompt = GENERATION_PROMPT_TEMPLATE(input);
+export const generateIdeas = async (input: string, mode: GenerationMode = 'python', count: number = 10): Promise<ScriptIdea[]> => {
+  const config = GENERATION_CONFIG[mode];
+  const fullPrompt = config.promptTemplate(input, count);
 
   const payload: ApiPayload = {
     prompt: fullPrompt,
@@ -35,7 +36,21 @@ export const generateIdeas = async (input: string): Promise<ScriptIdea[]> => {
     if (!text) {
         throw new Error("No output text returned from the model.");
     }
-    return parseResponse(text);
+
+    // Parse the generated ideas
+    const ideas = parseResponse(text, mode);
+
+    // Save ideas to local backend
+    if (ideas.length > 0) {
+        try {
+            await saveIdeasToLocal(ideas);
+        } catch (saveError) {
+            console.error("Failed to save ideas to local database:", saveError);
+            // We don't throw here, as we still want to show the results to the user
+        }
+    }
+
+    return ideas;
 
   } catch (error) {
     console.error("Generation failed:", error);
@@ -43,73 +58,105 @@ export const generateIdeas = async (input: string): Promise<ScriptIdea[]> => {
   }
 };
 
-const parseResponse = (text: string): ScriptIdea[] => {
-  // 1. Split by double newlines to separate items
-  // The model might use slightly different spacing, so we regex for 2 or more newlines
+const saveIdeasToLocal = async (ideas: ScriptIdea[]) => {
+    try {
+        const response = await fetch(`${LOCAL_API_ENDPOINT}/validate-and-save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ideas })
+        });
+
+        if (!response.ok) {
+            console.error('Error saving to local DB:', response.statusText);
+        } else {
+            const result = await response.json();
+            console.log('Saved to local DB:', result);
+        }
+    } catch (err) {
+        console.error('Error contacting local DB:', err);
+    }
+};
+
+const parseResponse = (text: string, mode: GenerationMode): ScriptIdea[] => {
+  const parsedItems: ScriptIdea[] = [];
+
+  try {
+      // Find JSON Array in the text (to ignore "Thinking" blocks or other text)
+      // We look for [ ... ] structure.
+      const jsonStart = text.indexOf('[');
+      const jsonEnd = text.lastIndexOf(']');
+
+      let cleanText = text;
+
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          cleanText = text.substring(jsonStart, jsonEnd + 1);
+      }
+
+      const jsonItems = JSON.parse(cleanText);
+
+      if (Array.isArray(jsonItems)) {
+          jsonItems.forEach((item, index) => {
+              const idea: ScriptIdea = {
+                  id: `idea-${mode}-${Date.now()}-${index}`,
+                  category: item.category || 'General',
+                  title: item.title || 'Untitled',
+                  description: item.description || '',
+                  moneyValue: item.moneyValue,
+                  effortValue: item.effortValue,
+                  monetizationStrategies: item.monetizationStrategies,
+                  refinedPrompt: item.refinedPrompt
+              };
+
+              if (idea.title && idea.description) {
+                  parsedItems.push(idea);
+              }
+          });
+      }
+  } catch (e) {
+      console.warn("JSON parsing failed, falling back to legacy parsing.", e);
+      // Fallback to legacy parsing if JSON fails (e.g. model ignored instructions)
+      return parseLegacyResponse(text, mode);
+  }
+
+  return parsedItems;
+};
+
+const parseLegacyResponse = (text: string, mode: GenerationMode): ScriptIdea[] => {
+  const config = GENERATION_CONFIG[mode];
+  const expectedFields = config.fields;
   const rawItems = text.split(/\n\s*\n/);
-  
   const parsedItems: ScriptIdea[] = [];
 
   rawItems.forEach((item, index) => {
     // Clean up the item string
     const cleanItem = item.trim();
     if (!cleanItem) return;
-
-    // We expect 4 parts. 
-    // Let's split by newline.
-    const lines = cleanItem.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-    // Sometimes description or prompt spans multiple lines. 
-    // The user format uses {{ }} wrappers strictly? 
-    // Let's assume the format is adhered to:
-    // {{Category}}
-    // {{Title}}
-    // {{Desc}}
-    // {{Prompt}}
-    
-    // Robust parsing: Extract content between {{ and }}
-    // Or just take lines if braces aren't there (fallback)
-    
-    let category = '';
-    let title = '';
-    let description = '';
-    let refinedPrompt = '';
-
-    // Regex approach is safer given multiline possibilities in description/prompt
-    // But typically the simple format requests put them in blocks.
-    
-    // Let's try to identify blocks by the {{ }} markers if present
     const matches = cleanItem.match(/{{(.*?)}}/gs);
-    
-    if (matches && matches.length >= 4) {
-        // Remove the braces and trim
-        category = matches[0].replace(/{{|}}/g, '').trim();
-        title = matches[1].replace(/{{|}}/g, '').trim();
-        description = matches[2].replace(/{{|}}/g, '').trim();
-        // Refined prompt is the rest, potentially.
-        // The 4th match is likely the prompt.
-        refinedPrompt = matches[3].replace(/{{|}}/g, '').trim();
+    const idea: any = {
+        id: `idea-${mode}-${index}-${Date.now()}`
+    };
+
+    if (matches && matches.length >= expectedFields.length) {
+        expectedFields.forEach((field, i) => {
+            if (matches[i]) {
+                idea[field] = matches[i].replace(/{{|}}/g, '').trim();
+            }
+        });
     } else {
-        // Fallback: Line based.
-        // Assuming the first line is category, second is title.
-        // It's risky to assume line counts for desc/prompt without markers.
-        // Given the strict prompt, we hope for markers.
-        if (lines.length >= 4) {
-             category = lines[0].replace(/^{{|}}$/g, '');
-             title = lines[1].replace(/^{{|}}$/g, '');
-             description = lines[2].replace(/^{{|}}$/g, '');
-             refinedPrompt = lines.slice(3).join('\n').replace(/^{{|}}$/g, '');
+        const lines = cleanItem.split('\n').filter(l => l.trim().length > 0);
+        if (lines.length >= 3) {
+             idea.category = lines[0]?.replace(/{{|}}/g, '') || 'General';
+             idea.title = lines[1]?.replace(/{{|}}/g, '') || 'Untitled';
+             idea.description = lines[2]?.replace(/{{|}}/g, '') || '';
+        } else {
+            return;
         }
     }
 
-    if (title && description) {
-        parsedItems.push({
-            id: `idea-${index}-${Date.now()}`,
-            category,
-            title,
-            description,
-            refinedPrompt
-        });
+    if (idea.title && idea.description) {
+        parsedItems.push(idea as ScriptIdea);
     }
   });
 

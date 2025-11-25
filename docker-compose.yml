@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_KEY: ${VITE_API_KEY}
+        VITE_API_ENDPOINT: ${VITE_API_ENDPOINT}
+        VITE_LOCAL_API_ENDPOINT: ${VITE_LOCAL_API_ENDPOINT}
+        VITE_BASE_URL: ${VITE_BASE_URL}
+    container_name: idea-generator
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3002}:3001"
+    environment:
+      - PORT=3001
+    networks:
+      - idea-generator-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: idea_generator_cloudflared
+    restart: unless-stopped
+    depends_on:
+      - app
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    environment:
+      - CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - idea-generator-net
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --quiet --tries=1 --spider http://app:3001/ || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  idea-generator-net:
+    driver: bridge

@@ -9,13 +9,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Database Setup
+// Ensure db file is relative to the server script location
 const dbPath = path.resolve(__dirname, 'ideas.db');
 const verboseSqlite = sqlite3.verbose();
 const db = new verboseSqlite.Database(dbPath, (err) => {
@@ -51,8 +52,6 @@ function initializeDatabase() {
 // Routes
 
 // Validate and Save Ideas
-// Receives a list of ideas. Checks if they exist (by title). Saves new ones.
-// Returns only the new ideas that were saved.
 app.post('/api/validate-and-save', (req, res) => {
     const incomingIdeas = req.body.ideas;
 
@@ -65,16 +64,13 @@ app.post('/api/validate-and-save', (req, res) => {
 
     const checkAndInsert = (idea) => {
         return new Promise((resolve, reject) => {
-            // Simple duplicate check based on Title (case-insensitive)
             db.get('SELECT id FROM ideas WHERE lower(title) = lower(?)', [idea.title], (err, row) => {
                 if (err) {
                     reject(err);
                 } else if (row) {
-                    // Exists
                     duplicates.push(idea);
                     resolve();
                 } else {
-                    // New idea, insert it
                     const stmt = db.prepare(`INSERT INTO ideas (id, category, title, description, moneyValue, effortValue, monetizationStrategies, refinedPrompt, thought) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
                     stmt.run(
                         idea.id,
@@ -101,7 +97,6 @@ app.post('/api/validate-and-save', (req, res) => {
         });
     };
 
-    // Process all ideas sequentially (or parallel with Promise.all)
     Promise.all(incomingIdeas.map(checkAndInsert))
         .then(() => {
             console.log(`Processed ${incomingIdeas.length} ideas. Saved ${newIdeas.length} new, found ${duplicates.length} duplicates.`);
@@ -126,6 +121,15 @@ app.get('/api/ideas', (req, res) => {
         }
         res.json({ ideas: rows });
     });
+});
+
+// Serve Static Files (Frontend Build)
+// This must come AFTER API routes
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Catch-all route to serve React's index.html for client-side routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(PORT, () => {
