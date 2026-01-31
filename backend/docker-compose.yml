@@ -1,0 +1,35 @@
+services:
+  api:
+    build: .
+    container_name: idea-generator-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - DATABASE_NAME=genscript
+      # Ensure GEMINI_API_KEY is available in your shell or .env file
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - mongo
+    networks:
+      - idea-gen-network
+    # Mount source code for development (optional, remove for production)
+    volumes:
+      - .:/app/backend
+
+  mongo:
+    image: mongo:latest
+    container_name: idea-generator-mongo
+    # ports:
+    # - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - idea-gen-network
+
+networks:
+  idea-gen-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
